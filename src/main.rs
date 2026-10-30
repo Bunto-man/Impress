@@ -1,12 +1,14 @@
+use image::image_dimensions;
 use image::{codecs::jpeg::JpegEncoder, imageops::FilterType};
 use rfd::FileDialog;
 use std::fs::File;
 use std::io::{self, Write};
 
 // Helper function to read a number from the terminal
+// simple!
 fn prompt_for_number(prompt: &str, default: u32) -> u32 {
     let mut input = String::new();
-    print!("{} [default {}]: ", prompt, default);
+    print!("{} [default/Current {}]: ", prompt, default);
     io::stdout().flush().unwrap();
 
     io::stdin().read_line(&mut input).unwrap();
@@ -20,8 +22,9 @@ fn prompt_for_number(prompt: &str, default: u32) -> u32 {
 }
 
 fn main() {
+    println!("Impress will compress the pictures to the limit.\n");
     loop {
-        println!("Step 1: Select an image to resize...");
+        println!("Select an image to resize...");
 
         // 1. Open a native file browser to pick the input image
         let input_path = match FileDialog::new()
@@ -30,17 +33,22 @@ fn main() {
         {
             Some(path) => path,
             None => {
-                println!("No file selected. Exiting.");
-                return;
+                println!("No file selected. Try again.");
+                continue;
             }
         };
 
         println!("Selected: {}", input_path.display());
 
+        //changes start here:
+        //hold the current size of the image and set that to the default!
+        //let picture = image::open(input_path).unwrap();
+        let (default_width, default_height) = image_dimensions(&input_path).unwrap();
+
         // 2. Prompt the user for dimensions and quality in the terminal
-        let width = prompt_for_number("Enter target width", 800);
-        let height = prompt_for_number("Enter target height", 600);
-        let quality = prompt_for_number("Enter JPEG quality (1-100)", 80) as u8;
+        let width = prompt_for_number("Enter target width", default_width);
+        let height = prompt_for_number("Enter target height", default_height);
+        let quality = prompt_for_number("Enter JPEG quality (1-100%)", 80) as u8;
 
         println!("Step 2: Choose where to save the new image...");
 
@@ -53,8 +61,8 @@ fn main() {
         {
             Some(path) => path,
             None => {
-                println!("No save location selected. Exiting.");
-                return;
+                println!("No save location selected.\n  please try again.");
+                continue;
             }
         };
 
@@ -65,7 +73,7 @@ fn main() {
             Ok(image) => image,
             Err(e) => {
                 eprintln!("Failed to open image: {}", e);
-                return;
+                continue;
             }
         };
 
@@ -75,7 +83,8 @@ fn main() {
             Ok(f) => f,
             Err(e) => {
                 eprintln!("Failed to create output file: {}", e);
-                return;
+                println!("Try again?");
+                continue;
             }
         };
 
